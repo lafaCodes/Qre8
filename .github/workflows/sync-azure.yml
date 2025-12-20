@@ -1,0 +1,21 @@
+name: Sync to Azure DevOps
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper sync
+
+      - name: Push to Azure DevOps
+        run: |
+          git remote add azure https://${{ secrets.AZURE_DEVOPS_PAT }}@dev.azure.com/changatech/QRe8/_git/QRe8
+          git push azure main --force
