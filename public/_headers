@@ -1,9 +1,6 @@
 /*
-  # Security Headers for Cloudflare Pages
-  
-  # Content Security Policy - Controls which resources can be loaded
-  # Allows: Cloudflare Turnstile, Cloudflare Analytics, Microsoft Clarity, Buy Me a Coffee, Google Fonts
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.clarity.ms https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://cdn.buymeacoffee.com https://*.clarity.ms; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  # Content Security Policy - Relaxed for third-party services
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.clarity.ms https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://cdn.buymeacoffee.com https://*.clarity.ms; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   
   # Prevent clickjacking attacks
   X-Frame-Options: DENY
@@ -14,31 +11,21 @@
   # Control referrer information
   Referrer-Policy: strict-origin-when-cross-origin
   
-  # Permissions Policy - Disable unnecessary features
+  # Permissions Policy
   Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
   
-  # Strict Transport Security - Force HTTPS
+  # Strict Transport Security
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  
-  # Prevent XSS in older browsers
-  X-XSS-Protection: 1; mode=block
-  
-  # Cross-Origin policies
-  # Note: COEP/CORP relaxed to allow Turnstile iframe and third-party resources
-  Cross-Origin-Opener-Policy: same-origin-allow-popups
-  Cross-Origin-Resource-Policy: cross-origin
 
-# Cache static assets aggressively
+# Cache static assets
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
 /icons/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Service worker should not be cached
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
 
-# Manifest can be cached but revalidated
 /manifest.json
   Cache-Control: public, max-age=86400, must-revalidate
