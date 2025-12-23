@@ -24,9 +24,9 @@
   X-XSS-Protection: 1; mode=block
   
   # Cross-Origin policies
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Embedder-Policy: credentialless
-  Cross-Origin-Resource-Policy: same-origin
+  # Note: COEP/CORP relaxed to allow Turnstile iframe and third-party resources
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Cross-Origin-Resource-Policy: cross-origin
 
 # Cache static assets aggressively
 /_next/static/*
