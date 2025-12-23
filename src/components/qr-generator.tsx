@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { QRData, qrTabs } from "@/lib/qr-types";
 import { QRDisplay } from "@/components/qr-display";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { InstallButton } from "@/components/install-prompt";
 import { TurnstileWidget } from "@/components/turnstile-widget";
 import { checkRateLimit } from "@/lib/rate-limit";
 import QRCode from "qrcode";
@@ -208,7 +209,10 @@ export function QRGenerator() {
                 <p className="text-xs text-muted-foreground">by CHANGA.tech</p>
               </div>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <InstallButton />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </header>
