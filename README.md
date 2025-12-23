@@ -1,4 +1,5 @@
-# QRe8 - QR Code GeneratorThis is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# QRe8 - QR Code Generator
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 
 
@@ -10,7 +11,7 @@ A beautiful, fast, and privacy-first QR code generator PWA built with Next.js an
 
 
 
-## Features```bash
+## Features
 
 npm run dev
 
@@ -26,7 +27,7 @@ npm run dev
 
 bun dev
 
-## QR Code Types```
+## QR Code Types
 
 
 
@@ -68,7 +69,7 @@ To learn more about Next.js, take a look at the following resources:
 
 
 
-```bashCheck out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 
 # Install dependencies
 npm install
@@ -78,7 +79,6 @@ npm run dev
 
 # Build for production
 npm run build
-```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser.
 
@@ -86,13 +86,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 Create a `.env.local` file:
 
-```bash
 # For local development (always passes)
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
 
 # For production
 # NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_real_site_key
-```
 
 ## Deployment
 
