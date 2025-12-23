@@ -1,10 +1,12 @@
-/// <reference lib="webworker" />
+// QRe8 Service Worker v1.0.0
+// Secure caching strategy with version control
 
-const CACHE_NAME = 'qre8-v1';
-const OFFLINE_URL = '/';
+const CACHE_VERSION = 'qre8-v1.0.0';
+const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
-// Assets to cache immediately on install
-const PRECACHE_ASSETS = [
+// Assets to cache on install (app shell)
+const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
@@ -12,114 +14,186 @@ const PRECACHE_ASSETS = [
   '/icons/apple-touch-icon.png',
 ];
 
-// Install event - precache essential assets
+// Maximum items in dynamic cache to prevent memory issues
+const MAX_DYNAMIC_CACHE_SIZE = 50;
+
+// Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Precaching essential assets');
-      return cache.addAll(PRECACHE_ASSETS);
-    })
+    caches.open(STATIC_CACHE)
+      .then((cache) => {
+        console.log('[SW] Caching static assets');
+        return cache.addAll(STATIC_ASSETS);
+      })
+      .then(() => {
+        // Force the waiting service worker to become active
+        return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error('[SW] Failed to cache static assets:', error);
+      })
   );
-  // Activate immediately
-  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => {
-            console.log('[SW] Deleting old cache:', name);
-            return caches.delete(name);
-          })
-      );
-    })
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((name) => name.startsWith('qre8-') && name !== STATIC_CACHE && name !== DYNAMIC_CACHE)
+            .map((name) => {
+              console.log('[SW] Deleting old cache:', name);
+              return caches.delete(name);
+            })
+        );
+      })
+      .then(() => {
+        // Take control of all pages immediately
+        return self.clients.claim();
+      })
   );
-  // Take control of all pages immediately
-  self.clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch event - network first for HTML, cache first for assets
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
   // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
-
-  // Skip browser extension requests
-  if (!event.request.url.startsWith('http')) return;
-
-  // Skip API calls and external requests
-  const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
-
-  // For navigation requests (HTML pages)
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache successful responses
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Return cached version or offline page
-          return caches.match(event.request).then((cached) => {
-            return cached || caches.match(OFFLINE_URL);
-          });
-        })
-    );
+  if (request.method !== 'GET') {
     return;
   }
 
-  // For static assets - stale while revalidate
-  if (
-    event.request.destination === 'style' ||
-    event.request.destination === 'script' ||
-    event.request.destination === 'image' ||
-    event.request.destination === 'font'
-  ) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) => {
-        return cache.match(event.request).then((cached) => {
-          const fetchPromise = fetch(event.request).then((response) => {
-            if (response.status === 200) {
-              cache.put(event.request, response.clone());
-            }
-            return response;
-          });
-          return cached || fetchPromise;
-        });
-      })
-    );
+  // Skip cross-origin requests (except for trusted CDNs)
+  if (url.origin !== self.location.origin) {
+    // Allow Cloudflare Turnstile
+    if (url.hostname === 'challenges.cloudflare.com') {
+      event.respondWith(fetch(request));
+      return;
+    }
     return;
   }
 
-  // Default: network first, cache fallback
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
-  );
+  // Skip API routes and auth endpoints (if any in future)
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // For HTML pages - Network first, fallback to cache
+  if (request.headers.get('Accept')?.includes('text/html')) {
+    event.respondWith(networkFirstStrategy(request));
+    return;
+  }
+
+  // For static assets (JS, CSS, images) - Cache first
+  if (isStaticAsset(url.pathname)) {
+    event.respondWith(cacheFirstStrategy(request));
+    return;
+  }
+
+  // Default - Network first with cache fallback
+  event.respondWith(networkFirstStrategy(request));
 });
 
-// Handle messages from the app
+// Check if request is for a static asset
+function isStaticAsset(pathname) {
+  const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2'];
+  return staticExtensions.some((ext) => pathname.endsWith(ext)) || pathname.startsWith('/_next/static/');
+}
+
+// Cache first strategy - good for static assets
+async function cacheFirstStrategy(request) {
+  try {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    const networkResponse = await fetch(request);
+    
+    // Only cache successful responses
+    if (networkResponse.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch (error) {
+    console.error('[SW] Cache first strategy failed:', error);
+    // Return a fallback offline page if available
+    const cachedResponse = await caches.match('/');
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
+}
+
+// Network first strategy - good for HTML/dynamic content
+async function networkFirstStrategy(request) {
+  try {
+    const networkResponse = await fetch(request);
+    
+    // Cache successful responses
+    if (networkResponse.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE);
+      cache.put(request, networkResponse.clone());
+      
+      // Limit dynamic cache size
+      limitCacheSize(DYNAMIC_CACHE, MAX_DYNAMIC_CACHE_SIZE);
+    }
+
+    return networkResponse;
+  } catch (error) {
+    // Network failed, try cache
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // For HTML requests, return the cached index page
+    if (request.headers.get('Accept')?.includes('text/html')) {
+      const fallback = await caches.match('/');
+      if (fallback) {
+        return fallback;
+      }
+    }
+
+    throw error;
+  }
+}
+
+// Limit cache size to prevent memory issues
+async function limitCacheSize(cacheName, maxSize) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  
+  if (keys.length > maxSize) {
+    // Delete oldest entries (FIFO)
+    const deleteCount = keys.length - maxSize;
+    for (let i = 0; i < deleteCount; i++) {
+      await cache.delete(keys[i]);
+    }
+  }
+}
+
+// Handle messages from the main thread
 self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') {
     self.skipWaiting();
   }
+  
+  if (event.data === 'clearCache') {
+    caches.keys().then((names) => {
+      names.forEach((name) => {
+        if (name.startsWith('qre8-')) {
+          caches.delete(name);
+        }
+      });
+    });
+  }
 });
+
+console.log('[SW] Service Worker loaded:', CACHE_VERSION);
