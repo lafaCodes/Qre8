@@ -2,7 +2,8 @@
   # Security Headers for Cloudflare Pages
   
   # Content Security Policy - Controls which resources can be loaded
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' challenges.cloudflare.com; frame-src challenges.cloudflare.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  # Allows: Cloudflare Turnstile, Cloudflare Analytics, Microsoft Clarity, Buy Me a Coffee, Google Fonts
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.clarity.ms https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://cdn.buymeacoffee.com https://*.clarity.ms; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.clarity.ms https://*.clarity.ms; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   
   # Prevent clickjacking attacks
   X-Frame-Options: DENY
