@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { QROptions, QRData, qrTabs } from "@/lib/qr-types";
 import { generateQRString } from "@/lib/qr-generator";
+import { consumeRateLimit, formatResetTime } from "@/lib/rate-limit";
 import { Download, Copy, Check, Settings2, Palette } from "lucide-react";
 import { toast } from "sonner";
 
@@ -90,6 +91,13 @@ export function QRDisplay({ data }: QRDisplayProps) {
   });
 
   const downloadPNG = async () => {
+    // Check rate limit
+    const rateLimit = consumeRateLimit("download");
+    if (!rateLimit.allowed) {
+      toast.error(`Rate limit exceeded. Try again in ${formatResetTime(rateLimit.resetIn)}.`);
+      return;
+    }
+
     if (!printContainerRef.current || !printCanvasRef.current || !data) return;
 
     const container = printContainerRef.current;
@@ -136,6 +144,13 @@ export function QRDisplay({ data }: QRDisplayProps) {
   };
 
   const downloadSVG = async () => {
+    // Check rate limit
+    const rateLimit = consumeRateLimit("download");
+    if (!rateLimit.allowed) {
+      toast.error(`Rate limit exceeded. Try again in ${formatResetTime(rateLimit.resetIn)}.`);
+      return;
+    }
+
     if (!data) return;
 
     try {

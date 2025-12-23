@@ -8,6 +8,7 @@ import { QRData, qrTabs } from "@/lib/qr-types";
 import { QRDisplay } from "@/components/qr-display";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TurnstileWidget } from "@/components/turnstile-widget";
+import { checkRateLimit } from "@/lib/rate-limit";
 import QRCode from "qrcode";
 import {
   UrlForm,
@@ -117,6 +118,20 @@ export function QRGenerator() {
   }, []);
 
   const handleDataChange = useCallback((data: QRData | null) => {
+    // Allow clearing QR data without rate limit check
+    if (data === null) {
+      setQrData(null);
+      return;
+    }
+    
+    // Check rate limit for QR generation
+    const rateCheck = checkRateLimit('qr_generate');
+    if (!rateCheck.allowed) {
+      const minutes = Math.ceil(rateCheck.resetIn / 60);
+      toast.error(`Rate limit exceeded. Try again in ${minutes} minute${minutes > 1 ? 's' : ''}.`);
+      return;
+    }
+    
     setQrData(data);
   }, []);
 
