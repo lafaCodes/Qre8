@@ -24,6 +24,11 @@ interface QRDisplayProps {
   data: QRData | null;
 }
 
+// Security: Size limits to prevent DoS
+const MIN_QR_SIZE = 128;
+const MAX_QR_SIZE = 512;
+const MAX_QR_CONTENT_LENGTH = 2048; // Practical limit for scannable QR codes
+
 const defaultOptions: QROptions = {
   size: 256,
   fgColor: "#000000",
@@ -46,6 +51,11 @@ const formatDate = (): string => {
   });
 };
 
+// Security: Validate QR size is within bounds
+const validateSize = (size: number): number => {
+  return Math.min(MAX_QR_SIZE, Math.max(MIN_QR_SIZE, size));
+};
+
 export function QRDisplay({ data }: QRDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,10 +70,16 @@ export function QRDisplay({ data }: QRDisplayProps) {
 
     const qrString = generateQRString(data);
     
+    // Security: Check content length
+    if (qrString.length > MAX_QR_CONTENT_LENGTH) {
+      toast.error(`Content too long (${qrString.length} chars). Maximum is ${MAX_QR_CONTENT_LENGTH} characters.`);
+      return;
+    }
+    
     try {
       if (canvasRef.current) {
         await QRCode.toCanvas(canvasRef.current, qrString, {
-          width: options.size,
+          width: validateSize(options.size),
           margin: 2,
           color: {
             dark: options.fgColor,
@@ -157,7 +173,7 @@ export function QRDisplay({ data }: QRDisplayProps) {
       const qrString = generateQRString(data);
       const svgString = await QRCode.toString(qrString, {
         type: "svg",
-        width: options.size,
+        width: validateSize(options.size),
         margin: 2,
         color: {
           dark: options.fgColor,
