@@ -118,3 +118,69 @@
     }
   }
 }
+
+/* PWA Splash Screen */
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+}
+
+#splash-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#splash-screen .splash-logo {
+  width: 120px;
+  height: 120px;
+  animation: splash-pulse 1.5s ease-in-out infinite;
+}
+
+#splash-screen .splash-text {
+  margin-top: 24px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+#splash-screen .splash-subtext {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+#splash-screen .splash-loader {
+  margin-top: 32px;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #334155;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: splash-spin 0.8s linear infinite;
+}
+
+@keyframes splash-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes splash-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
